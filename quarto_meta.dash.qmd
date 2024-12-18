@@ -1,0 +1,139 @@
+---
+title: "Interactive Meta-Analysis Dashboard"
+format: html
+editor: visual
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)  # Data manipulation
+library(meta)       # Meta-analysis
+library(plotly)     # Interactive plots
+```
+
+## **Introduction**
+
+This dashboard allows users to explore a living meta-analysis interactively. Users can visualize meta-analysis plots, filter studies, and explore how study inclusion affects overall effect sizes and heterogeneity.
+
+---
+
+## **Data Import and Preparation**
+
+```{r}
+# Simulated example of meta-analysis data
+meta_data <- tibble(
+  study_id = paste("Study", 1:10),
+  effect_size = rnorm(10, mean = 0.5, sd = 0.2),
+  lower_ci = effect_size - runif(10, 0.1, 0.3),
+  upper_ci = effect_size + runif(10, 0.1, 0.3),
+  sample_size = sample(50:200, 10),
+  analysis_type = sample(c("Change-from-baseline", "End-point", "Self-report", "Clinician-administered"), 10, replace = TRUE),
+  include = TRUE  # Column to toggle study inclusion in analysis
+)
+
+# Display the data table for context
+meta_data
+```
+
+---
+
+## **Analysis Type Selection**
+
+```{r}
+# Create a dropdown menu to select analysis type
+selected_analysis <- "All Studies"  # Default selection
+analysis_options <- c("All Studies", "Change-from-baseline", "End-point", "Self-report", "Clinician-administered")
+
+cat("**Select Analysis Type:**\n")
+cat(paste0("- [", analysis_options, "](javascript:void(0))\n"), sep="")
+```
+
+---
+
+## **Interactive Filtering of Studies**
+
+```{r}
+# Filter studies based on selected analysis type
+filtered_data <- if (selected_analysis == "All Studies") {
+  meta_data
+} else {
+  meta_data %>% filter(analysis_type == selected_analysis)
+}
+
+# Interactive table with checkboxes to select/deselect studies
+plotly_table <- plotly::plot_ly(
+  type = 'table',
+  header = list(values = names(filtered_data)),
+  cells = list(values = t(filtered_data))
+)
+
+plotly_table
+```
+
+> **Instructions:** Use the table above to review the list of studies included in the meta-analysis. While you can't toggle studies on this static dashboard, the table allows you to view each study's information.
+
+---
+
+## **Meta-Analysis Calculation**
+
+```{r}
+# Filter only included studies
+filtered_data <- filtered_data %>% filter(include == TRUE)
+
+# Perform a random-effects meta-analysis
+meta_result <- meta::metagen(
+  TE = effect_size, 
+  seTE = (upper_ci - lower_ci) / 3.92,  # Approximation of SE from CI
+  studlab = study_id, 
+  data = filtered_data, 
+  sm = "SMD" # Standardized Mean Difference
+)
+
+# Display the meta-analysis results
+summary(meta_result)
+```
+
+---
+
+## **Interactive Forest Plot**
+
+```{r}
+# Create the forest plot with meta-analysis results
+meta::forest(
+  meta_result, 
+  studlab = TRUE, 
+  xlab = "Effect Size (SMD)", 
+  col.square = "darkblue"
+)
+```
+
+> **Instructions:** Use the forest plot above to visualize the effect sizes of the studies. You can hover over points to see the study name, effect size, and confidence intervals.
+
+---
+
+## **Heterogeneity Assessment**
+
+```{r}
+# Extract heterogeneity measures
+heterogeneity <- tibble(
+  I2 = meta_result$I2, 
+  Q = meta_result$Q, 
+  pval_Q = meta_result$pval.Q
+)
+
+heterogeneity
+```
+
+> **Interpretation:** The I2 value represents the percentage of total variation across studies due to heterogeneity rather than chance. Use this measure to assess the consistency of study results.
+
+---
+
+## **Conclusion**
+This dashboard provides an interactive view of meta-analysis results. While static on GitHub Pages, a more dynamic version could allow users to toggle inclusion of specific studies or adjust filters for sensitivity analyses. For an interactive version, consider hosting on shinyapps.io, Streamlit Cloud, or similar platforms.
+
+---
+
+## **Future Enhancements**
+- Add a sidebar filter to toggle study inclusion/exclusion.
+- Deploy an interactive version via Shiny or Streamlit for real-time updates.
+- Allow users to upload their own meta-analysis data for analysis.
+

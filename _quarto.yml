@@ -1,0 +1,14 @@
+project:
+  title: "test_dashboard"
+  type: website
+
+format:
+  html: 
+    theme: flatly
+
+publish:
+  gh-pages:
+    branch: gh-pages
+    folder: docs
+
+

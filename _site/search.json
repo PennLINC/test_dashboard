@@ -1,0 +1,72 @@
+[
+  {
+    "objectID": "quarto_meta.dash.html",
+    "href": "quarto_meta.dash.html",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "",
+    "text": "This dashboard allows users to explore a living meta-analysis interactively. Users can visualize meta-analysis plots, filter studies, and explore how study inclusion affects overall effect sizes and heterogeneity."
+  },
+  {
+    "objectID": "quarto_meta.dash.html#introduction",
+    "href": "quarto_meta.dash.html#introduction",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "",
+    "text": "This dashboard allows users to explore a living meta-analysis interactively. Users can visualize meta-analysis plots, filter studies, and explore how study inclusion affects overall effect sizes and heterogeneity."
+  },
+  {
+    "objectID": "quarto_meta.dash.html#data-import-and-preparation",
+    "href": "quarto_meta.dash.html#data-import-and-preparation",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "Data Import and Preparation",
+    "text": "Data Import and Preparation\n\n# Simulated example of meta-analysis data\nmeta_data &lt;- tibble(\n  study_id = paste(\"Study\", 1:10),\n  effect_size = rnorm(10, mean = 0.5, sd = 0.2),\n  lower_ci = effect_size - runif(10, 0.1, 0.3),\n  upper_ci = effect_size + runif(10, 0.1, 0.3),\n  sample_size = sample(50:200, 10),\n  analysis_type = sample(c(\"Change-from-baseline\", \"End-point\", \"Self-report\", \"Clinician-administered\"), 10, replace = TRUE),\n  include = TRUE  # Column to toggle study inclusion in analysis\n)\n\n# Display the data table for context\nmeta_data\n\n# A tibble: 10 × 7\n   study_id effect_size lower_ci upper_ci sample_size analysis_type      include\n   &lt;chr&gt;          &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;       &lt;int&gt; &lt;chr&gt;              &lt;lgl&gt;  \n 1 Study 1        0.291   0.111     0.589         183 End-point          TRUE   \n 2 Study 2        0.400   0.114     0.678         178 Clinician-adminis… TRUE   \n 3 Study 3        0.634   0.405     0.742         147 Self-report        TRUE   \n 4 Study 4        0.138  -0.0126    0.247          85 Self-report        TRUE   \n 5 Study 5        0.532   0.401     0.759          55 Self-report        TRUE   \n 6 Study 6        0.180   0.0263    0.414          95 Clinician-adminis… TRUE   \n 7 Study 7        0.441   0.177     0.550          68 Self-report        TRUE   \n 8 Study 8        0.148  -0.119     0.439         145 Clinician-adminis… TRUE   \n 9 Study 9        0.696   0.516     0.884         180 Clinician-adminis… TRUE   \n10 Study 10       0.194   0.0673    0.316         166 End-point          TRUE"
+  },
+  {
+    "objectID": "quarto_meta.dash.html#analysis-type-selection",
+    "href": "quarto_meta.dash.html#analysis-type-selection",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "Analysis Type Selection",
+    "text": "Analysis Type Selection\n\n# Create a dropdown menu to select analysis type\nselected_analysis &lt;- \"All Studies\"  # Default selection\nanalysis_options &lt;- c(\"All Studies\", \"Change-from-baseline\", \"End-point\", \"Self-report\", \"Clinician-administered\")\n\ncat(\"**Select Analysis Type:**\\n\")\n\n**Select Analysis Type:**\n\ncat(paste0(\"- [\", analysis_options, \"](javascript:void(0))\\n\"), sep=\"\")\n\n- [All Studies](javascript:void(0))\n- [Change-from-baseline](javascript:void(0))\n- [End-point](javascript:void(0))\n- [Self-report](javascript:void(0))\n- [Clinician-administered](javascript:void(0))"
+  },
+  {
+    "objectID": "quarto_meta.dash.html#interactive-filtering-of-studies",
+    "href": "quarto_meta.dash.html#interactive-filtering-of-studies",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "Interactive Filtering of Studies",
+    "text": "Interactive Filtering of Studies\n\n# Filter studies based on selected analysis type\nfiltered_data &lt;- if (selected_analysis == \"All Studies\") {\n  meta_data\n} else {\n  meta_data %&gt;% filter(analysis_type == selected_analysis)\n}\n\n# Interactive table with checkboxes to select/deselect studies\nplotly_table &lt;- plotly::plot_ly(\n  type = 'table',\n  header = list(values = names(filtered_data)),\n  cells = list(values = t(filtered_data))\n)\n\nplotly_table\n\n\n\n\n\n\nInstructions: Use the table above to review the list of studies included in the meta-analysis. While you can’t toggle studies on this static dashboard, the table allows you to view each study’s information."
+  },
+  {
+    "objectID": "quarto_meta.dash.html#meta-analysis-calculation",
+    "href": "quarto_meta.dash.html#meta-analysis-calculation",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "Meta-Analysis Calculation",
+    "text": "Meta-Analysis Calculation\n\n# Filter only included studies\nfiltered_data &lt;- filtered_data %&gt;% filter(include == TRUE)\n\n# Perform a random-effects meta-analysis\nmeta_result &lt;- meta::metagen(\n  TE = effect_size, \n  seTE = (upper_ci - lower_ci) / 3.92,  # Approximation of SE from CI\n  studlab = study_id, \n  data = filtered_data, \n  sm = \"SMD\" # Standardized Mean Difference\n)\n\n# Display the meta-analysis results\nsummary(meta_result)\n\n            SMD            95%-CI %W(common) %W(random)\nStudy 1  0.2909 [ 0.0518; 0.5300]        5.5        9.1\nStudy 2  0.3998 [ 0.1178; 0.6819]        3.9        8.1\nStudy 3  0.6344 [ 0.4658; 0.8029]       11.1       10.6\nStudy 4  0.1378 [ 0.0081; 0.2676]       18.6       11.4\nStudy 5  0.5322 [ 0.3534; 0.7111]        9.8       10.4\nStudy 6  0.1796 [-0.0145; 0.3736]        8.3       10.1\nStudy 7  0.4414 [ 0.2550; 0.6277]        9.0       10.2\nStudy 8  0.1479 [-0.1308; 0.4265]        4.0        8.2\nStudy 9  0.6957 [ 0.5117; 0.8798]        9.3       10.3\nStudy 10 0.1942 [ 0.0699; 0.3184]       20.3       11.5\n\nNumber of studies: k = 10\n\n                        SMD           95%-CI     z  p-value\nCommon effect model  0.3447 [0.2887; 0.4008] 12.06 &lt; 0.0001\nRandom effects model 0.3669 [0.2341; 0.4997]  5.42 &lt; 0.0001\n\nQuantifying heterogeneity (with 95%-CIs):\n tau^2 = 0.0358 [0.0119; 0.1335]; tau = 0.1891 [0.1089; 0.3653]\n I^2 = 82.4% [68.8%; 90.0%]; H = 2.38 [1.79; 3.16]\n\nTest of heterogeneity:\n     Q d.f.  p-value\n 51.02    9 &lt; 0.0001\n\nDetails of meta-analysis methods:\n- Inverse variance method\n- Restricted maximum-likelihood estimator for tau^2\n- Q-Profile method for confidence interval of tau^2 and tau\n- Calculation of I^2 based on Q"
+  },
+  {
+    "objectID": "quarto_meta.dash.html#interactive-forest-plot",
+    "href": "quarto_meta.dash.html#interactive-forest-plot",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "Interactive Forest Plot",
+    "text": "Interactive Forest Plot\n\n# Create the forest plot with meta-analysis results\nmeta::forest(\n  meta_result, \n  studlab = TRUE, \n  xlab = \"Effect Size (SMD)\", \n  col.square = \"darkblue\"\n)\n\n\n\n\n\n\n\n\n\nInstructions: Use the forest plot above to visualize the effect sizes of the studies. You can hover over points to see the study name, effect size, and confidence intervals."
+  },
+  {
+    "objectID": "quarto_meta.dash.html#heterogeneity-assessment",
+    "href": "quarto_meta.dash.html#heterogeneity-assessment",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "Heterogeneity Assessment",
+    "text": "Heterogeneity Assessment\n\n# Extract heterogeneity measures\nheterogeneity &lt;- tibble(\n  I2 = meta_result$I2, \n  Q = meta_result$Q, \n  pval_Q = meta_result$pval.Q\n)\n\nheterogeneity\n\n# A tibble: 1 × 3\n     I2     Q       pval_Q\n  &lt;dbl&gt; &lt;dbl&gt;        &lt;dbl&gt;\n1 0.824  51.0 0.0000000692\n\n\n\nInterpretation: The I2 value represents the percentage of total variation across studies due to heterogeneity rather than chance. Use this measure to assess the consistency of study results."
+  },
+  {
+    "objectID": "quarto_meta.dash.html#conclusion",
+    "href": "quarto_meta.dash.html#conclusion",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "Conclusion",
+    "text": "Conclusion\nThis dashboard provides an interactive view of meta-analysis results. While static on GitHub Pages, a more dynamic version could allow users to toggle inclusion of specific studies or adjust filters for sensitivity analyses. For an interactive version, consider hosting on shinyapps.io, Streamlit Cloud, or similar platforms."
+  },
+  {
+    "objectID": "quarto_meta.dash.html#future-enhancements",
+    "href": "quarto_meta.dash.html#future-enhancements",
+    "title": "Interactive Meta-Analysis Dashboard",
+    "section": "Future Enhancements",
+    "text": "Future Enhancements\n\nAdd a sidebar filter to toggle study inclusion/exclusion.\nDeploy an interactive version via Shiny or Streamlit for real-time updates.\nAllow users to upload their own meta-analysis data for analysis."
+  }
+]
